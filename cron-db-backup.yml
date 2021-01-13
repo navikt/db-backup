@@ -31,9 +31,9 @@ spec:
               imagePullPolicy: Always
               resources:
                 requests:
-                  cpu: 0.2
+                  cpu: "0.2"
                   memory: 256Mi
                 limits:
-                  cpu: 2
+                  cpu: "2"
                   memory: 512Mi
           restartPolicy: OnFailure

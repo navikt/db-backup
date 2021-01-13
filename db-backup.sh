@@ -1,12 +1,12 @@
 #!/bin/bash -e
 
 if [ $# -lt 2 ]; then
-  echo "Missing parameters bucket and cluster"
+  echo "Must specify two arguments: bucket and cluster"
   exit 1
 fi
 
 if [[ ! "$2" =~ ^("dev-gcp"|"prod-gcp")$ ]]; then
-  echo "Invalid cluster name: 'dev-gcp' | 'prod-gcp'"
+  echo "Invalid cluster name: '$2'. Valid: 'dev-gcp' | 'prod-gcp'"
   exit 1
 fi
 
