@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 if [ $# -lt 2 ]; then
   echo "Must specify two arguments: bucket and cluster"
@@ -24,16 +24,18 @@ for namespace in aura; do
   echo "Getting instances in namespace $namespace"
   dbs=$(kubectl get sqldatabases -n $namespace --no-headers -o custom-columns=":metadata.name")
   project_id=$(kubectl get namespace $namespace -o jsonpath='{.metadata.annotations.cnrm\.cloud\.google\.com/project-id}')
+  gcloud auth activate-service-account --key-file /credentials/saKey
   gcloud config set project "$project_id"
   echo "project_id: ${project_id}"
   for db in $dbs; do
     instance=$(kubectl get sqldatabase $db -n $namespace --no-headers -o custom-columns=":spec.instanceRef.name")
     echo "Instance name: $instance"
+    kubectl get sqlinstance $instance || echo "Database instance not found $instance" && break
     service_account_email=$(kubectl get sqlinstance $instance -n $namespace --no-headers -o custom-columns=":status.serviceAccountEmailAddress")
     echo "serviceAccountEmail: ${service_account_email}"
     dump_file_name="$(date +%Y%m%d)_${instance}_${project_id}"
     echo $dump_file_name
-    gsutil iam ch serviceAccount:"${service_account_email}":objectCreator gs://"$BUCKET"
+    gsutil iam ch serviceAccount:"${service_account_email}":objectAdmin gs://"$BUCKET"
     gcloud sql export sql "${instance}" gs://"$BUCKET"/"$dump_file_name" --database="$db"
   done
 done
