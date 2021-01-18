@@ -44,7 +44,7 @@ metadata:
   name: db-backup
   namespace: nais
 spec:
-  schedule: "* 23 * * *"
+  schedule: "* 04 * * *"
   successfulJobsHistoryLimit: 1
   jobTemplate:
     spec:
@@ -61,7 +61,7 @@ spec:
             - name: gpr-credentials
           containers:
           - name: db-backup
-            image: navikt/db-backup:0.2
+            image: navikt/db-backup:0.3
             imagePullPolicy: Always
             resources:
               requests:
