@@ -9,7 +9,7 @@ db-backup is docker container with a simple backup script for backing up all pos
 
   * Service account with project viewer role
   * JSON key created for the service account
-  * K8s secret with JSON key mounted into the container
+  * k8s secret with JSON key mounted into the container
 
 ### Deployment
 
