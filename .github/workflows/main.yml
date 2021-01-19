@@ -53,7 +53,7 @@ jobs:
           git config user.email "aura@nav.no"
           git config user.name "NAIS deploy pipeline"
           sed -E -i "s#image: .+#image: ${DB_BACKUP_IMAGE}#" vars/dev-gcp/db-backup.yaml
-          sed -E -i "s#image: .+#image: ${DB_BACKUP_IMAGE}#" vars/prod-gcp/db-backup.yaml
+          # sed -E -i "s#image: .+#image: ${DB_BACKUP_IMAGE}#" vars/prod-gcp/db-backup.yaml
           git add .
           git --no-pager diff --cached
           git commit -a -m "Bump db_backup to version ${version}"
