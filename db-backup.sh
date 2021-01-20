@@ -31,13 +31,18 @@ backup_in() {
   service_account_email=$(kubectl get sqlinstance "$instance" -n "$namespace" --no-headers -o custom-columns=":status.serviceAccountEmailAddress")
   dump_file_name="$(date +%Y%m%d)_${instance}"
   gsutil iam ch serviceAccount:"${service_account_email}":objectCreator gs://"$BUCKET_NAME"
-  gsutil -q stat gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name"
+  bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name"
+  gsutil -q stat "$bucketTarget"
 
   if [ "$?" != 0 ]; then
     # TODO: Consider using --offload for less disruption
-    gcloud sql export sql "$instance" gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name" --database="$db"
+    counter=0
+    until [ "$counter" -ge 3 ]; do
+      gcloud sql export sql "$instance" "$bucketTarget" --database="$db" && break
+      counter=$((counter + 1))
+      sleep 30
+    done
   fi
-  # TODO: could save failing command to list and run list if not empty again. to handle updates interrupts recursively?.
 }
 
 # main
@@ -54,7 +59,7 @@ for namespace in ${all_db_namespaces}; do
 
     if [ "$?" != 0 ]; then
       echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
-      # TODO Should handle db changed manually
+      # Create notification from log to inform teams
     else
       backup_in "$instance" "$namespace"
     fi
