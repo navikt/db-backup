@@ -41,6 +41,7 @@ backup_in() {
       gcloud sql export sql "$instance" "$bucketTarget" --database="$db" && break
       counter=$((counter + 1))
       sleep 30
+      echo "Retrying $instance..."
     done
   fi
 }
