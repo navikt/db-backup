@@ -31,7 +31,7 @@ backup_in() {
   service_account_email=$(kubectl get sqlinstance "$instance" -n "$namespace" --no-headers -o custom-columns=":status.serviceAccountEmailAddress")
   dump_file_name="$(date +%Y%m%d)_${instance}"
   gsutil iam ch serviceAccount:"${service_account_email}":objectCreator gs://"$BUCKET_NAME"
-  bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name"
+  bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
   gsutil -q stat "$bucketTarget"
 
   if [ "$?" != 0 ]; then
