@@ -33,25 +33,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          path: db-backup
+      - uses: actions/checkout@v2
+        with:
+          repository: navikt/nais-yaml
+          token: ${{ secrets.SRVNAIS_REPO_PUSH_PAT }}
+          path: nais-yaml
       - name: Generate image environment variable
         run: |
+          cd db-backup
           version=$(./version.sh)
           echo "version=${version}" >> $GITHUB_ENV
           echo "DB_BACKUP_IMAGE=${db_backup_image}:${version}" >> $GITHUB_ENV
-          echo "NAIS_YAML=${GITHUB_WORKSPACE}/nais-yaml" >> $GITHUB_ENV
-          pwd
       - name: Bump version in nais-yaml
-        env:
-          DEPLOY_KEY: ${{ secrets.NAIS_YAML_DEPLOY_KEY }}
-          GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
         run: |
-          eval "$(ssh-agent -s)"
-          ssh-add - <<< "${DEPLOY_KEY}"
-          mkdir -p $NAIS_YAML
-          git clone git@github.com:navikt/nais-yaml.git $NAIS_YAML
-          cd $NAIS_YAML
-          git config user.email "aura@nav.no"
-          git config user.name "NAIS deploy pipeline"
+          cd nais-yaml
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
           sed -E -i "s#image: docker.pkg.github.com/${{ github.repository }}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/dev-gcp.yaml
           sed -E -i "s#image: docker.pkg.github.com/${{ github.repository }}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/prod-gcp.yaml
           git add .
