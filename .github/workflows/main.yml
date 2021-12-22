@@ -3,7 +3,7 @@ name: Build and deploy db-backup
 on: [push]
 
 env:
-  db_backup_image: docker.pkg.github.com/${{ github.repository }}/db-backup
+  db_backup_image: ghcr.io/${{ github.repository }}/db-backup
 
 jobs:
   build:
@@ -17,15 +17,17 @@ jobs:
           version=$(./version.sh)
           echo "version=${version}" >> $GITHUB_ENV
           echo "DB_BACKUP_IMAGE=${db_backup_image}:${version}" >> $GITHUB_ENV
-      - name: Build db_backup docker image
-        run: docker build . --tag $DB_BACKUP_IMAGE
-      - name: Login to Github package registry
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo "$GITHUB_TOKEN" | docker login docker.pkg.github.com -u "$GITHUB_REPOSITORY" --password-stdin
-      - name: Push docker image
-        run: |
-          docker push $DB_BACKUP_IMAGE
+      - uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ${{ env.DB_BACKUP_IMAGE }}
+
   deploy:
     name: Deploy to Kubernetes
     if: github.ref == 'refs/heads/main'
@@ -57,8 +59,8 @@ jobs:
           cd nais-yaml
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          sed -E -i "s#image: docker.pkg.github.com/${{ github.repository }}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/dev-gcp.yaml
-          sed -E -i "s#image: docker.pkg.github.com/${{ github.repository }}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/prod-gcp.yaml
+          sed -E -i "s#image: ${db_backup_image}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/dev-gcp.yaml
+          sed -E -i "s#image: ${db_backup_image}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/prod-gcp.yaml
           git add .
           git --no-pager diff --cached
           git commit --no-verify -a -m "Bump db_backup to version ${version}"
