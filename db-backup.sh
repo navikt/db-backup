@@ -35,10 +35,9 @@ backup_in() {
   gsutil -q stat "$bucketTarget"
 
   if [ "$?" != 0 ]; then
-    # TODO: Consider using --offload for less disruption
     counter=0
     until [ "$counter" -ge 3 ]; do
-      gcloud sql export sql "$instance" "$bucketTarget" --database="$db" && break
+      gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload && break
       counter=$((counter + 1))
       sleep 30
       echo "Retrying $instance..."
