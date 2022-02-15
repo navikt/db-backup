@@ -35,13 +35,7 @@ backup_in() {
   gsutil -q stat "$bucketTarget"
 
   if [ "$?" != 0 ]; then
-    counter=0
-    until [ "$counter" -ge 3 ]; do
-      gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload && break
-      counter=$((counter + 1))
-      sleep 30
-      echo "Retrying $instance..."
-    done
+      gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
   fi
 }
 
