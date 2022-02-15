@@ -39,6 +39,18 @@ backup_in() {
   fi
 }
 
+watch_operations() {
+  instance="$1"
+
+  if [[ "$instance" == "" ]]; then
+    echo "Namespace or instance not set"
+    exit 1
+  fi
+
+  PENDING_OPERATIONS=$(gcloud sql operations list --instance="$instance" --filter='status!=DONE' --format='value(name)')
+  gcloud sql operations wait "${PENDING_OPERATIONS}" --timeout=72000
+}
+
 # main
 all_db_namespaces=$(kubectl get sqldatabases -A --no-headers -o custom-columns=":metadata.namespace" | uniq)
 
@@ -53,9 +65,20 @@ for namespace in ${all_db_namespaces}; do
 
     if [ "$?" != 0 ]; then
       echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
-      # Create notification from log to inform teams
     else
       backup_in "$instance" "$namespace"
     fi
   done
+
+  for db in $dbs; do
+    instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
+    verifyInstance=$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)
+
+    if [ "$?" != 0 ]; then
+      echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
+    else
+      watch_operations "$instance"
+    fi
+  done
+
 done
