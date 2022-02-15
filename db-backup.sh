@@ -70,6 +70,13 @@ for namespace in ${all_db_namespaces}; do
     fi
   done
 
+done
+
+for namespace in ${all_db_namespaces}; do
+  echo "Getting instances in namespace $namespace"
+  dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
+  activate_service_account_in "$namespace"
+
   for db in $dbs; do
     instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
     verifyInstance=$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)
