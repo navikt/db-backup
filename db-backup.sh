@@ -48,7 +48,9 @@ watch_operations() {
   fi
 
   PENDING_OPERATIONS=$(gcloud sql operations list --instance="$instance" --filter='status!=DONE' --format='value(name)')
-  gcloud sql operations wait "${PENDING_OPERATIONS}" --timeout=72000
+  if [ "$PENDING_OPERATIONS" != "" ]; then 
+    gcloud sql operations wait "${PENDING_OPERATIONS}" --timeout=72000
+  fi
 }
 
 # main
