@@ -19,8 +19,9 @@ activate_service_account_in() {
 }
 
 backup_in() {
-  instance="$1"
-  namespace="$2"
+  db="$1"
+  instance="$2"
+  namespace="$3"
 
   if [[ "$instance" == "" || "$namespace" == "" ]]; then
     echo "Namespace or instance not set"
@@ -59,6 +60,14 @@ all_db_namespaces=$(kubectl get sqldatabases -A --no-headers -o custom-columns="
 for namespace in ${all_db_namespaces}; do
   echo "Getting instances in namespace $namespace"
   dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
+  instances=$(kubectl get sqlinstances -n "$namespace" --no-headers -o custom-columns=":metadata.name")
+
+  if [ "$(echo $dbs|wc -l)" != "$(echo $instances|wc -l)" ]; then
+    echo "mismatch in number of databases and instances in $namespace:"
+    echo "Databases:\n$dbs"
+    echo "Instances:\n$instances"
+  fi
+
   activate_service_account_in "$namespace"
 
   for db in $dbs; do
@@ -68,7 +77,7 @@ for namespace in ${all_db_namespaces}; do
     if [ "$?" != 0 ]; then
       echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
     else
-      backup_in "$instance" "$namespace"
+      backup_in "$db" "$instance" "$namespace"
     fi
   done
 
