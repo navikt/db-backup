@@ -17,7 +17,7 @@ jobs:
           version=$(./version.sh)
           echo "version=${version}" >> $GITHUB_ENV
           echo "DB_BACKUP_IMAGE=${db_backup_image}:${version}" >> $GITHUB_ENV
-      - uses: docker/login-action@v1
+      - uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
