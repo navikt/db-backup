@@ -1,6 +1,11 @@
 name: Build and deploy db-backup
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '*.md'
 
 env:
   db_backup_image: ghcr.io/${{ github.repository }}/db-backup
@@ -23,10 +28,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v3
+        id: build-push
         with:
           context: .
           push: true
           tags: ${{ env.DB_BACKUP_IMAGE }}
+      - name: Install cosign
+        uses: sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v2.0.0'
+      - name: Sign the container image
+        run: cosign sign --yes ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
+      - name: Create SBOM
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          format: 'cyclonedx'
+          output: 'cyclone.sbom.json'
+      - name: Attest image
+        run: cosign attest --yes --predicate sbom.json --type cyclonedx ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
 
   deploy:
     name: Deploy to Kubernetes
