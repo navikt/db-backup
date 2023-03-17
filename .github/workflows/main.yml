@@ -46,11 +46,12 @@ jobs:
       - name: Create SBOM
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'image'
-          format: 'cyclonedx'
-          output: 'cyclone.sbom.json'
+          scan-type: image
+          image-ref: ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
+          format: cyclonedx
+          output: cyclone.sbom.json
       - name: Attest image
-        run: cosign attest --yes --predicate sbom.json --type cyclonedx ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
+        run: cosign attest --yes --predicate cyclone.sbom.json --type cyclonedx ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
 
   deploy:
     name: Deploy to Kubernetes
