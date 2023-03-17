@@ -1,15 +1,12 @@
 name: Build and deploy db-backup
-
 on:
   push:
     branches:
       - main
     paths-ignore:
       - '*.md'
-
 env:
   db_backup_image: ghcr.io/${{ github.repository }}/db-backup
-
 jobs:
   build:
     name: Checkout code and setup
@@ -19,32 +16,32 @@ jobs:
       packages: write
       id-token: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # ratchet:actions/checkout@v3
       - name: Generate image environment variable
         shell: bash
         run: |
           version=$(./version.sh)
           echo "version=${version}" >> $GITHUB_ENV
           echo "DB_BACKUP_IMAGE=${db_backup_image}:${version}" >> $GITHUB_ENV
-      - uses: docker/login-action@v2
+      - uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v3
+      - uses: docker/build-push-action@1104d471370f9806843c095c1db02b5a90c5f8b6 # ratchet:docker/build-push-action@v3
         id: build-push
         with:
           context: .
           push: true
           tags: ${{ env.DB_BACKUP_IMAGE }}
       - name: Install cosign
-        uses: sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@ca922a571676e06d3299cce5d520e178ba89a276 # ratchet:sigstore/cosign-installer@main
         with:
           cosign-release: 'v2.0.0'
       - name: Sign the container image
         run: cosign sign --yes ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
       - name: Create SBOM
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@1f0aa582c8c8f5f7639610d6d38baddfea4fdcee # ratchet:aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
@@ -52,23 +49,22 @@ jobs:
           output: cyclone.sbom.json
       - name: Attest image
         run: cosign attest --yes --predicate cyclone.sbom.json --type cyclonedx ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
-
   deploy:
     name: Deploy to Kubernetes
     if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # ratchet:actions/checkout@v3
         with:
           path: db-backup
-      - uses: navikt/github-app-token-generator@v1
+      - uses: navikt/github-app-token-generator@a9cd374e271b8aef573b8c16ac46c44fb89b02db # ratchet:navikt/github-app-token-generator@v1
         id: get-token
         with:
           private-key: ${{ secrets.NAIS_APP_PRIVATE_KEY }}
           app-id: ${{ secrets.NAIS_APP_ID }}
           repo: navikt/nais-yaml
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # ratchet:actions/checkout@v3
         with:
           repository: navikt/nais-yaml
           token: ${{ steps.get-token.outputs.token }}
