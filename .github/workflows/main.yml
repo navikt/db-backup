@@ -14,6 +14,10 @@ jobs:
   build:
     name: Checkout code and setup
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v3
       - name: Generate image environment variable
