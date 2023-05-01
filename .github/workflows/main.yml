@@ -35,7 +35,7 @@ jobs:
           push: true
           tags: ${{ env.DB_BACKUP_IMAGE }}
       - name: Install cosign
-        uses: sigstore/cosign-installer@ca922a571676e06d3299cce5d520e178ba89a276 # ratchet:sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@204a51a57a74d190b284a0ce69b44bc37201f343 # ratchet:sigstore/cosign-installer@main
         with:
           cosign-release: 'v2.0.0'
       - name: Sign the container image
