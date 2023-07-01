@@ -41,7 +41,7 @@ jobs:
       - name: Sign the container image
         run: cosign sign --yes ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
       - name: Create SBOM
-        uses: aquasecurity/trivy-action@e5f43133f6e8736992c9f3c1b3296e24b37e17f2 # ratchet:aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # ratchet:aquasecurity/trivy-action@master
         with:
           scan-type: image
           image-ref: ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
