@@ -5,15 +5,12 @@ on:
       - main
     paths-ignore:
       - '*.md'
-env:
-  NAME: db-backup
 
 jobs:
   build:
     name: Checkout code and setup
     permissions:
       contents: read
-      packages: write
       id-token: write
     runs-on: ubuntu-latest
     steps:
@@ -32,4 +29,5 @@ jobs:
         env:
           CLUSTER: dev-gcp
           RESOURCE: nais/naisjob.yaml,nais/clusterrole.yaml
-          VARS: image=${{ steps.build-push-sign.outputs.image }},bucketName=testBucket
+          VAR: image=${{ steps.build-push-sign.outputs.image }}
+          VAR: bucketName=testBucket
