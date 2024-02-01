@@ -29,5 +29,4 @@ jobs:
         env:
           CLUSTER: dev-gcp
           RESOURCE: nais/naisjob.yaml,nais/clusterrole.yaml
-          VAR: image=${{ steps.build-push-sign.outputs.image }}
-          VAR: bucketName=testBucket
+          VAR: image=${{ steps.build-push-sign.outputs.image }} bucketName=testBucket
