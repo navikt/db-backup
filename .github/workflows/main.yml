@@ -6,83 +6,30 @@ on:
     paths-ignore:
       - '*.md'
 env:
-  db_backup_image: ghcr.io/${{ github.repository }}/db-backup
+  NAME: db-backup
+
 jobs:
   build:
     name: Checkout code and setup
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       id-token: write
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
-      - name: Generate image environment variable
-        shell: bash
-        run: |
-          version=$(./version.sh)
-          echo "version=${version}" >> $GITHUB_ENV
-          echo "DB_BACKUP_IMAGE=${db_backup_image}:${version}" >> $GITHUB_ENV
-      - uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # ratchet:docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@2eb1c1961a95fc15694676618e422e8ba1d63825 # ratchet:docker/build-push-action@v3
-        id: build-push
-        with:
-          context: .
-          push: true
-          tags: ${{ env.DB_BACKUP_IMAGE }}
-      - name: Install cosign
-        uses: sigstore/cosign-installer@6e04d228eb30da1757ee4e1dd75a0ec73a653e06 # ratchet:sigstore/cosign-installer@main
-        with:
-          cosign-release: 'v2.2.1'
-      - name: Sign the container image
-        run: cosign sign --yes ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
-      - name: Create SBOM
-        uses: aquasecurity/trivy-action@41f05d9ecffa2ed3f1580af306000f734b733e54 # ratchet:aquasecurity/trivy-action@master
-        with:
-          scan-type: image
-          image-ref: ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
-          format: cyclonedx
-          output: cyclone.sbom.json
-      - name: Attest image
-        run: cosign attest --yes --predicate cyclone.sbom.json --type cyclonedx ${{ env.DB_BACKUP_IMAGE }}@${{ steps.build-push.outputs.digest }}
-  deploy:
-    name: Deploy to Kubernetes
-    if: github.ref == 'refs/heads/main'
-    needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
+      - uses: actions/checkout@v4
+
+      - name: Push image to GAR 
+        uses: nais/docker-build-push@v0
+        id: build-push-sign
         with:
-          path: db-backup
-      - uses: navikt/github-app-token-generator@a3831f44404199df32d8f39f7c0ad9bb8fa18b1c # ratchet:navikt/github-app-token-generator@v1
-        id: get-token
-        with:
-          private-key: ${{ secrets.NAIS_APP_PRIVATE_KEY }}
-          app-id: ${{ secrets.NAIS_APP_ID }}
-          repo: navikt/nais-yaml
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
-        with:
-          repository: navikt/nais-yaml
-          token: ${{ steps.get-token.outputs.token }}
-          path: nais-yaml
-      - name: Generate image environment variable
-        run: |
-          cd db-backup
-          version=$(./version.sh)
-          echo "version=${version}" >> $GITHUB_ENV
-          echo "DB_BACKUP_IMAGE=${db_backup_image}:${version}" >> $GITHUB_ENV
-      - name: Bump version in nais-yaml
-        run: |
-          cd nais-yaml
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          sed -E -i "s#image: ${db_backup_image}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/dev-gcp.yaml
-          sed -E -i "s#image: ${db_backup_image}/db-backup.+#image: ${DB_BACKUP_IMAGE}#" vars/prod-gcp.yaml
-          git add .
-          git --no-pager diff --cached
-          git commit --no-verify -a -m "Bump db_backup to version ${version}"
-          git push
+          team: nais
+          identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
+    
+      - name: Deploy to NAIS
+        uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: dev-gcp
+          RESOURCE: nais/naisjob.yaml,nais/clusterrole.yaml
+          VARS: image=${{ steps.build-push-sign.outputs.image }},bucketName=testBucket

@@ -1,0 +1,32 @@
+apiVersion: nais.io/v1
+kind: Naisjob
+metadata:
+  labels:
+    team: nais
+  name: db-backup-new
+  namespace: nais
+spec:
+  accessPolicy:
+    outbound:
+      external:
+      - host: storage.googleapis.com
+      - host: www.googleapis.com
+  backoffLimit: 5
+  completions: 1
+  env:
+  - name: BUCKET_NAME
+    value: {{ bucketName }}
+  failedJobsHistoryLimit: 3
+  image: {{ image }}
+  resources:
+    limits:
+      cpu: 1
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  restartPolicy: OnFailure
+  schedule: '15 0 * * *'
+  skipCaBundle: true
+  successfulJobsHistoryLimit: 1
+  timeZone: Europe/Oslo
