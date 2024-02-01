@@ -28,5 +28,6 @@ jobs:
         uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
-          RESOURCE: nais/naisjob.yaml,nais/clusterrole.yaml
-          VAR: image=${{ steps.build-push-sign.outputs.image }} bucketName=testBucket
+          RESOURCE: nais/naisjob.yaml
+          VAR: image=${{ steps.build-push-sign.outputs.image }}
+          VARS: nais/dev.json

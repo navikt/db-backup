@@ -29,5 +29,5 @@ roleRef:
   name: db-backup-role
 subjects:
   - kind: ServiceAccount
-    name: db-backup-account
+    name: db-backup
     namespace: nais
