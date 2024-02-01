@@ -20,11 +20,11 @@ spec:
   image: {{ image }}
   resources:
     limits:
-      cpu: 1
-      memory: 512Mi
+      cpu: 1000
+      memory: 512
     requests:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 200
+      memory: 256
   restartPolicy: OnFailure
   schedule: '15 0 * * *'
   skipCaBundle: true
