@@ -27,11 +27,16 @@ jobs:
   deploy_to_dev:
     name: Deploy to nais dev-gcp
     needs: build_and_push
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: nais/deploy/actions/deploy@v2
         env:
           CLUSTER: dev-gcp
           RESOURCE: nais/naisjob.yaml
-          VAR: image=${{ steps.build-push-sign.outputs.image }}
+          VAR: image=${{ needs.build_and_push.outputs.image }}
           VARS: nais/dev.json
