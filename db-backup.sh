@@ -49,9 +49,27 @@ watchOperationForInstance() {
   fi
 
   PENDING_OPERATIONS=$(gcloud sql operations list --instance="$instance" --filter='status!=DONE' --format='value(name)')
-  if [ "$PENDING_OPERATIONS" != "" ]; then 
+  if [ "$PENDING_OPERATIONS" != "" ]; then
+    echo "Waiting for operations to finish"
     gcloud sql operations wait "${PENDING_OPERATIONS}" --timeout=72000
   fi
+}
+
+verifyInstance() {
+namespace="$1"
+instance="$2"
+  if [[ "$instance" == "" || "$namespace" == "" ]]; then
+    echo "Namespace or instance not set"
+    exit 1
+  fi
+
+  kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1
+
+  if [ "$?" != 0 ]; then
+    return 1
+  fi
+
+return 0
 }
 
 
@@ -74,27 +92,26 @@ for namespace in ${all_db_namespaces}; do
   for db in $dbs; do
     instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
 
-    if [ "$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)" != 0 ]; then
-      echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
-    else
+    if [ "$(verifyInstance "$namespace" "$instance")" ]; then
       backupInstance "$db" "$instance" "$namespace"
+    else
+      echo "$instance referenced in database $db does not exist. Skipping instance..."
     fi
   done
 
 done
 
 for namespace in ${all_db_namespaces}; do
-  echo "Getting instances in namespace $namespace"
   dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
   activateSA "$namespace"
 
   for db in $dbs; do
     instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
 
-    if [ "$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)" != 0 ]; then
-      echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
-    else
+    if [ "$(verifyInstance "$namespace" "$instance")" ]; then
       watchOperationForInstance "$instance"
+    else
+      echo "$instance referenced in database $db does not exist. Skipping instance..."
     fi
   done
 
