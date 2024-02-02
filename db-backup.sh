@@ -5,20 +5,21 @@ if [ "$BUCKET_NAME" == "" ]; then
   exit 1
 fi
 
-get_project_id() {
+getProjectId() {
   namespace="$1"
   local project_id
   project_id=$(kubectl get namespace "$namespace" -o jsonpath='{.metadata.annotations.cnrm\.cloud\.google\.com/project-id}')
   echo "$project_id"
 }
 
-activate_service_account_in() {
-  namespace="$1"
-  gcloud auth activate-service-account --key-file /credentials/saKey
-  gcloud config set project "$(get_project_id "$namespace")"
+activateSA() {
+  teamProjectId=$(getProjectId "$1")
+
+  gcloud projects add-iam-policy-binding --role=roles/cloudsql.editor --member=serviceAccount:nais-dev-25b2.svc.id.goog[nais/db-backup-new] $teamProjectId
+  gcloud config set project "$teamProjectId"
 }
 
-backup_in() {
+backupInstance() {
   db="$1"
   instance="$2"
   namespace="$3"
@@ -40,7 +41,7 @@ backup_in() {
   fi
 }
 
-watch_operations() {
+watchOperationForInstance() {
   instance="$1"
 
   if [[ "$instance" == "" ]]; then
@@ -53,6 +54,7 @@ watch_operations() {
     gcloud sql operations wait "${PENDING_OPERATIONS}" --timeout=72000
   fi
 }
+
 
 # main
 all_db_namespaces=$(kubectl get sqldatabases -A --no-headers -o custom-columns=":metadata.namespace" | uniq)
@@ -68,16 +70,15 @@ for namespace in ${all_db_namespaces}; do
     echo "Instances:\n$instances"
   fi
 
-  activate_service_account_in "$namespace"
+  activateSA "$namespace"
 
   for db in $dbs; do
     instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
-    verifyInstance=$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)
 
-    if [ "$?" != 0 ]; then
+    if [ "$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)" != 0 ]; then
       echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
     else
-      backup_in "$db" "$instance" "$namespace"
+      backupInstance "$db" "$instance" "$namespace"
     fi
   done
 
@@ -86,16 +87,15 @@ done
 for namespace in ${all_db_namespaces}; do
   echo "Getting instances in namespace $namespace"
   dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
-  activate_service_account_in "$namespace"
+  activateSA "$namespace"
 
   for db in $dbs; do
     instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
-    verifyInstance=$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)
 
-    if [ "$?" != 0 ]; then
+    if [ "$(kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1)" != 0 ]; then
       echo "spec.instanceRef.name in database $db does not exist. Skipping instance $instance..."
     else
-      watch_operations "$instance"
+      watchOperationForInstance "$instance"
     fi
   done
 
