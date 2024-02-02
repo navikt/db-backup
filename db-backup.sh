@@ -15,7 +15,6 @@ getProjectId() {
 activateSA() {
   teamProjectId=$(getProjectId "$1")
 
-  gcloud projects add-iam-policy-binding --role=roles/cloudsql.editor --member=serviceAccount:nais-dev-25b2.svc.id.goog[nais/db-backup-new] $teamProjectId
   gcloud config set project "$teamProjectId"
 }
 
