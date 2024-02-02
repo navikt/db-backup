@@ -8,6 +8,7 @@ on:
 
 jobs:
   build_and_push:
+    name: Build and sign image  to GAR
     outputs:
       image: ${{ steps.build-push-sign.outputs.image }}
     permissions:

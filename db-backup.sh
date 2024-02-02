@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$BUCKET_NAME" == "" ]; then
-  echo "Bucket name not set"
+  echo "bucket name not set"
   exit 1
 fi
 
@@ -24,18 +24,19 @@ backupInstance() {
   namespace="$3"
 
   if [[ "$instance" == "" || "$namespace" == "" ]]; then
-    echo "Namespace or instance not set"
+    echo "namespace or instance not set"
     exit 1
   fi
 
-  echo "$(date +%H%M%S): Backing up instance $instance"
+  echo "$(date +%H%M%S): backing up instance $instance"
   service_account_email=$(kubectl get sqlinstance "$instance" -n "$namespace" --no-headers -o custom-columns=":status.serviceAccountEmailAddress")
   dump_file_name="$(date +%Y%m%d)_${instance}"
+  echo "setting permissions for $service_account_email"
   gsutil iam ch serviceAccount:"${service_account_email}":objectCreator gs://"$BUCKET_NAME"
   bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
-  gsutil -q stat "$bucketTarget"
+  echo "checking if $bucketTarget exists before backing up"
 
-  if [ "$?" != 0 ]; then
+  if gsutil -q stat "$bucketTarget"; then
       gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
   fi
 }
@@ -44,13 +45,13 @@ watchOperationForInstance() {
   instance="$1"
 
   if [[ "$instance" == "" ]]; then
-    echo "Namespace or instance not set"
+    echo "namespace or instance not set"
     exit 1
   fi
 
   PENDING_OPERATIONS=$(gcloud sql operations list --instance="$instance" --filter='status!=DONE' --format='value(name)')
   if [ "$PENDING_OPERATIONS" != "" ]; then
-    echo "Waiting for operations to finish"
+    echo "waiting for operations to finish"
     gcloud sql operations wait "${PENDING_OPERATIONS}" --timeout=72000
   fi
 }
@@ -59,7 +60,7 @@ verifyInstance() {
 namespace="$1"
 instance="$2"
   if [[ "$instance" == "" || "$namespace" == "" ]]; then
-    echo "Namespace or instance not set"
+    echo "namespace or instance not set"
     exit 1
   fi
 
