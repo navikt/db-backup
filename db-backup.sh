@@ -65,11 +65,7 @@ instance="$2"
 
   kubectl get sqlinstance -n "$namespace" "$instance" >/dev/null 2>&1
 
-  if [ "$?" != 0 ]; then
-    return 1
-  fi
-
-return 0
+  return $?
 }
 
 
@@ -77,7 +73,7 @@ return 0
 all_db_namespaces=$(kubectl get sqldatabases -A --no-headers -o custom-columns=":metadata.namespace" | uniq)
 
 for namespace in ${all_db_namespaces}; do
-  echo "Getting instances in namespace $namespace"
+  echo "getting instances in namespace $namespace"
   dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
   instances=$(kubectl get sqlinstances -n "$namespace" --no-headers -o custom-columns=":metadata.name")
 
@@ -92,10 +88,10 @@ for namespace in ${all_db_namespaces}; do
   for db in $dbs; do
     instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
 
-    if [ "$(verifyInstance "$namespace" "$instance")" ]; then
+    if verifyInstance "$namespace" "$instance"; then
       backupInstance "$db" "$instance" "$namespace"
     else
-      echo "$instance referenced in database $db does not exist. Skipping instance..."
+      echo "instance $instance referenced in database $db does not exist. Skipping instance."
     fi
   done
 
@@ -108,10 +104,10 @@ for namespace in ${all_db_namespaces}; do
   for db in $dbs; do
     instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
 
-    if [ "$(verifyInstance "$namespace" "$instance")" ]; then
+    if verifyInstance "$namespace" "$instance"; then
       watchOperationForInstance "$instance"
     else
-      echo "$instance referenced in database $db does not exist. Skipping instance..."
+      echo "instance $instance referenced in database $db does not exist. Skipping instance."
     fi
   done
 
