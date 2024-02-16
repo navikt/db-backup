@@ -42,7 +42,7 @@ backupInstance() {
   fi
 
   echo "removing permissions for $service_account_email"
-  gcloud storage buckets remove-iam-policy-binding  gs://"${BUCKET_NAME} --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
+  gcloud storage buckets remove-iam-policy-binding  gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
 }
 
 watchOperationForInstance() {
