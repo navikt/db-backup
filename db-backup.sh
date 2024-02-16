@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$BUCKET_NAME" == "" ]; then
-  echo "bucket name not set"
+  echo "$(date +%H%M%S): bucket name not set"
   exit 1
 fi
 
@@ -9,7 +9,6 @@ getProjectId() {
   namespace="$1"
   local project_id
   project_id=$(kubectl get namespace "$namespace" -o jsonpath='{.metadata.annotations.cnrm\.cloud\.google\.com/project-id}')
-  echo "$project_id"
 }
 
 activateSA() {
@@ -24,20 +23,22 @@ backupInstance() {
   namespace="$3"
 
   if [[ "$instance" == "" || "$namespace" == "" ]]; then
-    echo "namespace or instance not set"
+    echo "$(date +%H%M%S): namespace or instance not set"
     exit 1
   fi
 
-  echo "$(date +%H%M%S): backing up instance $instance"
   service_account_email=$(kubectl get sqlinstance "$instance" -n "$namespace" --no-headers -o custom-columns=":status.serviceAccountEmailAddress")
   dump_file_name="$(date +%Y%m%d)_${instance}"
   
-  echo "setting permissions for $service_account_email"
-  gcloud storage buckets add-iam-policy-binding --quiet gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
+  echo "$(date +%H%M%S): setting permissions for $service_account_email"
+  gcloud storage buckets add-iam-policy-binding gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator 1>/dev/null
 
   bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
   if ! gcloud storage ls "$bucketTarget" 2>/dev/null; then
-      gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
+    echo "$(date +%H%M%S): backing up instance $instance"
+    gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
+  else
+    echo "$(date +%H%M%S): file already exists, skipping backup"
   fi
 }
 
@@ -45,13 +46,13 @@ watchOperationForInstance() {
   instance="$1"
 
   if [[ "$instance" == "" ]]; then
-    echo "namespace or instance not set"
+    echo "$(date +%H%M%S): namespace or instance not set"
     exit 1
   fi
 
   PENDING_OPERATIONS=$(gcloud sql operations list --instance="$instance" --filter='status!=DONE' --format='value(name)')
   if [ "$PENDING_OPERATIONS" != "" ]; then
-    echo "waiting for operations to finish"
+    echo "$(date +%H%M%S): waiting for operations to finish"
     gcloud sql operations wait "${PENDING_OPERATIONS}" --timeout=72000
   fi
 }
@@ -60,7 +61,7 @@ verifyInstance() {
 namespace="$1"
 instance="$2"
   if [[ "$instance" == "" || "$namespace" == "" ]]; then
-    echo "namespace or instance not set"
+    echo "$(date +%H%M%S): namespace or instance not set"
     exit 1
   fi
 
@@ -74,12 +75,12 @@ instance="$2"
 all_db_namespaces=$(kubectl get sqldatabases -A --no-headers -o custom-columns=":metadata.namespace" | uniq)
 
 for namespace in ${all_db_namespaces}; do
-  echo "getting instances in namespace $namespace"
+  echo "$(date +%H%M%S): getting instances in namespace $namespace"
   dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
   instances=$(kubectl get sqlinstances -n "$namespace" --no-headers -o custom-columns=":metadata.name")
 
   if [ "$(echo $dbs|wc -l)" != "$(echo $instances|wc -l)" ]; then
-    echo "mismatch in number of databases and instances in $namespace:"
+    echo "$(date +%H%M%S): mismatch in number of databases and instances in $namespace:"
     echo "Databases:\n$dbs"
     echo "Instances:\n$instances"
   fi
@@ -92,7 +93,7 @@ for namespace in ${all_db_namespaces}; do
     if verifyInstance "$namespace" "$instance"; then
       backupInstance "$db" "$instance" "$namespace"
     else
-      echo "instance $instance referenced in database $db does not exist. Skipping instance."
+      echo "$(date +%H%M%S): instance $instance referenced in database $db does not exist. Skipping instance."
     fi
   done
 
@@ -108,7 +109,7 @@ for namespace in ${all_db_namespaces}; do
     if verifyInstance "$namespace" "$instance"; then
       watchOperationForInstance "$instance"
     else
-      echo "instance $instance referenced in database $db does not exist. Skipping instance."
+      echo "$(date +%H%M%S): instance $instance referenced in database $db does not exist. Skipping instance."
     fi
   done
 
