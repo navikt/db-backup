@@ -40,9 +40,6 @@ backupInstance() {
   if ! gcloud storage ls "$bucketTarget" 2>/dev/null; then
       gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
   fi
-
-  echo "removing permissions for $service_account_email"
-  gcloud storage buckets remove-iam-policy-binding  gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
 }
 
 watchOperationForInstance() {
