@@ -31,14 +31,18 @@ backupInstance() {
   echo "$(date +%H%M%S): backing up instance $instance"
   service_account_email=$(kubectl get sqlinstance "$instance" -n "$namespace" --no-headers -o custom-columns=":status.serviceAccountEmailAddress")
   dump_file_name="$(date +%Y%m%d)_${instance}"
+  
   echo "setting permissions for $service_account_email"
-  gsutil iam ch serviceAccount:"${service_account_email}":objectCreator gs://"$BUCKET_NAME"
-  bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
-  echo "checking if $bucketTarget exists before backing up"
+  gcloud storage buckets add-iam-policy-binding  gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
 
-  if gsutil -q stat "$bucketTarget"; then
+  echo "checking if $bucketTarget exists before backing up"
+  bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
+  if gcloud storage ls "$bucketTarget"; then
       gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
   fi
+
+  echo "removing permissions for $service_account_email"
+  gcloud storage buckets remove-iam-policy-binding  gs://"${BUCKET_NAME} --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
 }
 
 watchOperationForInstance() {
