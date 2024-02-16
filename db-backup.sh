@@ -37,7 +37,7 @@ backupInstance() {
 
   echo "checking if $bucketTarget exists before backing up"
   bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
-  if gcloud storage ls "$bucketTarget"; then
+  if ! gcloud storage ls "$bucketTarget" 2>/dev/null; then
       gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
   fi
 
