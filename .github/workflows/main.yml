@@ -41,3 +41,20 @@ jobs:
           RESOURCE: nais/naisjob.yaml
           VAR: image=${{ needs.build_and_push.outputs.image }}
           VARS: nais/dev.json
+
+  deploy_to_prod:
+    name: Deploy to nais prod-gcp
+    needs: build_and_push
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: nais/deploy/actions/deploy@v2
+        env:
+          CLUSTER: prod-gcp
+          RESOURCE: nais/naisjob.yaml
+          VAR: image=${{ needs.build_and_push.outputs.image }}
+          VARS: nais/prod.json
