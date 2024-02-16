@@ -25,22 +25,22 @@ jobs:
           identity_provider: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
           project_id: ${{ vars.NAIS_MANAGEMENT_PROJECT_ID }}
 
-  deploy_to_dev:
-    name: Deploy to nais dev-gcp
-    needs: build_and_push
-    permissions:
-      contents: read
-      id-token: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: nais/deploy/actions/deploy@v2
-        env:
-          CLUSTER: dev-gcp
-          RESOURCE: nais/naisjob.yaml
-          VAR: image=${{ needs.build_and_push.outputs.image }}
-          VARS: nais/dev.json
+            #  deploy_to_dev:
+            #    name: Deploy to nais dev-gcp
+            #    needs: build_and_push
+            #    permissions:
+            #      contents: read
+            #      id-token: write
+            #    runs-on: ubuntu-latest
+            #    steps:
+            #      - uses: actions/checkout@v4
+            #
+            #      - uses: nais/deploy/actions/deploy@v2
+            #        env:
+            #          CLUSTER: dev-gcp
+            #          RESOURCE: nais/naisjob.yaml
+            #          VAR: image=${{ needs.build_and_push.outputs.image }}
+            #          VARS: nais/dev.json
 
   deploy_to_prod:
     name: Deploy to nais prod-gcp
