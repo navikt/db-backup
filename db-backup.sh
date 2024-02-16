@@ -9,6 +9,7 @@ getProjectId() {
   namespace="$1"
   local project_id
   project_id=$(kubectl get namespace "$namespace" -o jsonpath='{.metadata.annotations.cnrm\.cloud\.google\.com/project-id}')
+  echo "$project_id"
 }
 
 activateSA() {
