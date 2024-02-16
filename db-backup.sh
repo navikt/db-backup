@@ -35,7 +35,7 @@ backupInstance() {
   gcloud storage buckets add-iam-policy-binding gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator 1>/dev/null
 
   bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
-  if ! gcloud storage ls "$bucketTarget" 2>/dev/null; then
+  if ! gcloud storage ls "$bucketTarget" 1>&2>/dev/null; then
     echo "$(date +%H%M%S): backing up instance $instance"
     gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async
   else
