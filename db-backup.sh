@@ -33,9 +33,8 @@ backupInstance() {
   dump_file_name="$(date +%Y%m%d)_${instance}"
   
   echo "setting permissions for $service_account_email"
-  gcloud storage buckets add-iam-policy-binding  gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
+  gcloud storage buckets add-iam-policy-binding --quiet gs://"${BUCKET_NAME}" --member=serviceAccount:"${service_account_email}" --role=roles/storage.objectCreator
 
-  echo "checking if $bucketTarget exists before backing up"
   bucketTarget=gs://"$BUCKET_NAME"/"$namespace"/"$dump_file_name".gz
   if ! gcloud storage ls "$bucketTarget" 2>/dev/null; then
       gcloud sql export sql "$instance" "$bucketTarget" --database="$db" --offload --async

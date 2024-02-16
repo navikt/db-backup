@@ -2,10 +2,10 @@ apiVersion: nais.io/v1
 kind: Naisjob
 metadata:
   annotations:
-    kubectl.kubernetes.io/default-container: "db-backup-new"
+    kubectl.kubernetes.io/default-container: "db-backup"
   labels:
     team: nais
-  name: db-backup-new
+  name: db-backup
   namespace: nais
 spec:
   accessPolicy:
