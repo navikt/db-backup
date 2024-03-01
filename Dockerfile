@@ -1,4 +1,4 @@
-FROM google/cloud-sdk:462.0.1-alpine
+FROM google/cloud-sdk:466.0.0-alpine
 ENV KUBE_VERSION v1.28.3
 RUN apk add --no-cache --update bash
 ADD https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl /usr/local/bin/kubectl
