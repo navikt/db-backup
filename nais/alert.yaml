@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: db-backup-alert
+spec:
+  groups:
+    - name: db-backup-alerts
+      rules:
+        - alert: Postgres backup to on-prem failed
+          expr: |
+            pg_onprem_backup_prod == 1
+          for: 5m 
+          labels:
+            namespace: nais-system
+            severity: warning
+          annotations:
+            summary: "PostgreSQL backup from cloud storage bucket failed, the files have not been copied to on-premises database server"
+            action: "Check db-fetch-backup logs on a01dbvl026:/var/lib/pgsql"
