@@ -1,6 +1,5 @@
 # db-backup
-
-[![Github Actions](https://github.com/nais/db-backup/workflows/Build%20and%20deploy%20db-backup/badge.svg)](https://github.com/nais/db-backup/actions?query=workflow%3A%22Build+and+deploy+db-backup%22)
+[![Build and deploy db-backup](https://github.com/navikt/db-backup/actions/workflows/main.yml/badge.svg)](https://github.com/navikt/db-backup/actions/workflows/main.yml)
 [![License](http://img.shields.io/badge/license-mit-blue.svg?style=flat-square)](https://raw.githubusercontent.com/nais/named/master/LICENSE)
 
 db-backup is docker container with a simple backup script for backing up all postgreSQL databases in the kubernetes cluster to a bucket.
