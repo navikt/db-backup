@@ -77,8 +77,8 @@ all_db_namespaces=$(kubectl get sqldatabases -A --no-headers -o custom-columns="
 
 for namespace in ${all_db_namespaces}; do
   echo "$(date +%H%M%S): getting instances in namespace $namespace"
-  dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
-  instances=$(kubectl get sqlinstances -n "$namespace" --no-headers -o custom-columns=":metadata.name")
+  dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":spec.resourceID")
+  instances=$(kubectl get sqlinstances -n "$namespace" --no-headers -o custom-columns=":spec.resourceID")
 
   if [ "$(echo $dbs|wc -l)" != "$(echo $instances|wc -l)" ]; then
     echo "$(date +%H%M%S): mismatch in number of databases and instances in $namespace:"
