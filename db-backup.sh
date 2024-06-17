@@ -77,40 +77,41 @@ all_db_namespaces=$(kubectl get sqldatabases -A --no-headers -o custom-columns="
 
 for namespace in ${all_db_namespaces}; do
   echo "$(date +%H%M%S): getting instances in namespace $namespace"
-  dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":spec.resourceID")
-  instances=$(kubectl get sqlinstances -n "$namespace" --no-headers -o custom-columns=":spec.resourceID")
+  k8sSqlDatabases=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
+  k8sSqlInstances=$(kubectl get sqlinstances -n "$namespace" --no-headers -o custom-columns=":metadata.name")
 
-  if [ "$(echo $dbs|wc -l)" != "$(echo $instances|wc -l)" ]; then
+  if [ "$(echo "$k8sSqlDatabases"|wc -l)" != "$(echo "$k8sSqlInstances"|wc -l)" ]; then
     echo "$(date +%H%M%S): mismatch in number of databases and instances in $namespace:"
-    echo "Databases:\n$dbs"
-    echo "Instances:\n$instances"
+    printf "Databases:\n%s" "$k8sSqlDatabases"
+    printf "Instances:\n%s" "$k8sSqlInstances"
   fi
 
   activateSA "$namespace"
 
-  for db in $dbs; do
-    instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
+  for k8sSqlDatabase in $k8sSqlDatabases; do
+    instanceRef=$(kubectl get sqldatabase "$k8sSqlDatabase" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
+    pgDbName=$(kubectl get sqldatabase "$k8sSqlDatabase" -n "$namespace" --no-headers -o custom-columns=":spec.resourceID")
 
-    if verifyInstance "$namespace" "$instance"; then
-      backupInstance "$db" "$instance" "$namespace"
+    if verifyInstance "$namespace" "$instanceRef"; then
+      backupInstance "$pgDbName" "$instanceRef" "$namespace"
     else
-      echo "$(date +%H%M%S): instance $instance referenced in database $db does not exist. Skipping instance."
+      echo "$(date +%H%M%S): instance $instanceRef referenced in database $k8sSqlDatabase does not exist. Skipping instance."
     fi
   done
 
 done
 
 for namespace in ${all_db_namespaces}; do
-  dbs=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
+  k8sSqlDatabases=$(kubectl get sqldatabases -n "$namespace" --no-headers -o custom-columns=":metadata.name")
   activateSA "$namespace"
 
-  for db in $dbs; do
-    instance=$(kubectl get sqldatabase "$db" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
+  for k8sSqlDatabase in $k8sSqlDatabases; do
+    instanceRef=$(kubectl get sqldatabase "$k8sSqlDatabase" -n "$namespace" --no-headers -o custom-columns=":spec.instanceRef.name")
 
-    if verifyInstance "$namespace" "$instance"; then
-      watchOperationForInstance "$instance"
+    if verifyInstance "$namespace" "$instanceRef"; then
+      watchOperationForInstance "$instanceRef"
     else
-      echo "$(date +%H%M%S): instance $instance referenced in database $db does not exist. Skipping instance."
+      echo "$(date +%H%M%S): instance $instanceRef referenced in database $k8sSqlDatabase does not exist. Skipping instance."
     fi
   done
 
