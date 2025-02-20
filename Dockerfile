@@ -1,5 +1,5 @@
-FROM google/cloud-sdk:502.0.0-stable
-ENV KUBE_VERSION=v1.31.0
+FROM google/cloud-sdk:511.0.0-stable
+ENV KUBE_VERSION=v1.31.5
 RUN apt update && apt install bash
 ADD https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod +x /usr/local/bin/kubectl
