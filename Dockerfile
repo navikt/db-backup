@@ -1,4 +1,4 @@
-FROM google/cloud-sdk:551.0.0-stable
+FROM google/cloud-sdk:554.0.0-stable
 ENV KUBE_VERSION=v1.33.4
 ENV TZ=Europe/Oslo
 RUN apt update -y && apt install bash wget -y
