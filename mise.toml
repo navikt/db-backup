@@ -1,0 +1,29 @@
+[tools]
+go = "1.26.2"
+
+[tasks.build]
+description = "Build the binary"
+run = 'CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/db-backup ./cmd/db-backup'
+
+[tasks.test]
+description = "Run tests with race detector"
+run = "go test -race -count=1 ./..."
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks.check]
+description = "Run all checks (lint + test + build)"
+depends = ["lint", "test", "build"]
+
+[tasks.docker-build]
+description = "Build Docker image"
+run = """
+TAG=$(date +'%Y-%m-%d')-$(git rev-parse --short HEAD)
+docker build -t "navikt/db-backup:${TAG}" -t "navikt/db-backup:latest" .
+"""
+
+[tasks.clean]
+description = "Remove build artifacts"
+run = "rm -rf bin/"

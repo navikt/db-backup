@@ -13,6 +13,8 @@ spec:
       external:
       - host: storage.googleapis.com
       - host: www.googleapis.com
+      - host: sqladmin.googleapis.com
+  activeDeadlineSeconds: 72000
   backoffLimit: 5
   completions: 1
   env:
