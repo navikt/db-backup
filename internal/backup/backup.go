@@ -14,7 +14,6 @@ import (
 type K8sClient interface {
 	ListSQLDatabases(ctx context.Context) ([]k8s.SQLDatabase, error)
 	GetNamespaceProjectID(ctx context.Context, namespace string) (string, error)
-	SQLInstanceExists(ctx context.Context, namespace, name string) bool
 	GetSQLInstance(ctx context.Context, namespace, name string) (*k8s.SQLInstance, error)
 }
 
@@ -87,24 +86,21 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 
 		for _, db := range dbs {
-			if !r.k8s.SQLInstanceExists(ctx, namespace, db.InstanceRef) {
+			instance, err := r.k8s.GetSQLInstance(ctx, namespace, db.InstanceRef)
+			if err != nil {
+				slog.Error("failed to get sqlinstance", "instance", db.InstanceRef, "namespace", namespace, "error", err)
+				continue
+			}
+			if instance == nil {
 				slog.Warn("instance referenced in database does not exist, skipping",
 					"database", db.Name, "instance", db.InstanceRef, "namespace", namespace)
 				continue
 			}
 
-			instance, err := r.k8s.GetSQLInstance(ctx, namespace, db.InstanceRef)
-			if err != nil {
-				slog.Error("failed to get sqlinstance", "instance", db.InstanceRef, "error", err)
-				continue
-			}
-
 			// Grant IAM permissions
-			if instance.ServiceAccountEmailAddress != "" {
-				if err := r.gcp.GrantBucketObjectCreator(ctx, r.bucketName, instance.ServiceAccountEmailAddress); err != nil {
-					slog.Error("failed to grant IAM", "instance", db.InstanceRef, "error", err)
-					continue
-				}
+			if err := r.gcp.GrantBucketObjectCreator(ctx, r.bucketName, instance.ServiceAccountEmailAddress); err != nil {
+				slog.Error("failed to grant IAM", "instance", db.InstanceRef, "error", err)
+				continue
 			}
 
 			// Check if backup already exists

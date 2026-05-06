@@ -7,6 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
@@ -103,13 +104,25 @@ func (c *Client) ListSQLDatabases(ctx context.Context) ([]SQLDatabase, error) {
 }
 
 // GetSQLInstance returns a specific SQLInstance in a namespace.
+// Returns (nil, nil) if the instance does not exist (NotFound).
+// Returns (nil, error) for transient or permission errors.
 func (c *Client) GetSQLInstance(ctx context.Context, namespace, name string) (*SQLInstance, error) {
 	obj, err := c.dynamic.Resource(sqlInstanceGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("getting sqlinstance %s/%s: %w", namespace, name, err)
 	}
 
-	sa, _, _ := unstructured.NestedString(obj.Object, "status", "serviceAccountEmailAddress")
+	sa, found, err := unstructured.NestedString(obj.Object, "status", "serviceAccountEmailAddress")
+	if err != nil {
+		return nil, fmt.Errorf("reading status.serviceAccountEmailAddress from sqlinstance %s/%s: %w", namespace, name, err)
+	}
+	if !found || sa == "" {
+		return nil, fmt.Errorf("sqlinstance %s/%s has no status.serviceAccountEmailAddress (instance may not be ready)", namespace, name)
+	}
+
 	return &SQLInstance{
 		Name:                       obj.GetName(),
 		Namespace:                  obj.GetNamespace(),
@@ -117,11 +130,6 @@ func (c *Client) GetSQLInstance(ctx context.Context, namespace, name string) (*S
 	}, nil
 }
 
-// SQLInstanceExists checks if a SQLInstance exists in the given namespace.
-func (c *Client) SQLInstanceExists(ctx context.Context, namespace, name string) bool {
-	_, err := c.dynamic.Resource(sqlInstanceGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
-	return err == nil
-}
 
 func parseSQLDatabase(obj unstructured.Unstructured) (SQLDatabase, error) {
 	instanceRef, _, err := unstructured.NestedString(obj.Object, "spec", "instanceRef", "name")

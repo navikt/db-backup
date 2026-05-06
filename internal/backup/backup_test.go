@@ -29,15 +29,10 @@ func (m *mockK8s) GetNamespaceProjectID(_ context.Context, namespace string) (st
 	return id, nil
 }
 
-func (m *mockK8s) SQLInstanceExists(_ context.Context, namespace, name string) bool {
-	_, ok := m.instances[namespace+"/"+name]
-	return ok
-}
-
 func (m *mockK8s) GetSQLInstance(_ context.Context, namespace, name string) (*k8s.SQLInstance, error) {
 	inst, ok := m.instances[namespace+"/"+name]
 	if !ok {
-		return nil, fmt.Errorf("instance %s/%s not found", namespace, name)
+		return nil, nil
 	}
 	return inst, nil
 }

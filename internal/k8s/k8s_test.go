@@ -231,37 +231,23 @@ func TestListSQLDatabases(t *testing.T) {
 	}
 }
 
-func TestSQLInstanceExists(t *testing.T) {
-	instance := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"apiVersion": "sql.cnrm.cloud.google.com/v1beta1",
-			"kind":       "SQLInstance",
-			"metadata": map[string]interface{}{
-				"name":      "my-instance",
-				"namespace": "my-team",
-			},
-			"status": map[string]interface{}{
-				"serviceAccountEmailAddress": "sa@gcp.iam.gserviceaccount.com",
-			},
-		},
-	}
-
+func TestGetSQLInstance_NotFound(t *testing.T) {
 	scheme := runtime.NewScheme()
 	dynClient := dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme,
 		map[schema.GroupVersionResource]string{
 			sqlInstanceGVR: "SQLInstanceList",
 		},
-		instance,
 	)
 
 	client := NewClientFromDynamic(dynClient)
 	ctx := context.Background()
 
-	if !client.SQLInstanceExists(ctx, "my-team", "my-instance") {
-		t.Error("expected instance to exist")
+	got, err := client.GetSQLInstance(ctx, "my-team", "nonexistent")
+	if err != nil {
+		t.Fatalf("expected nil error for NotFound, got: %v", err)
 	}
-	if client.SQLInstanceExists(ctx, "my-team", "nonexistent") {
-		t.Error("expected instance to not exist")
+	if got != nil {
+		t.Errorf("expected nil instance for NotFound, got: %+v", got)
 	}
 }
 
