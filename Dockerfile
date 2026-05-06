@@ -1,11 +1,11 @@
-FROM google/cloud-sdk:566.0.0-stable
-ENV KUBE_VERSION=v1.33.4
-ENV TZ=Europe/Oslo
-RUN apt update -y && apt install bash wget -y
-RUN wget -O /usr/local/bin/kubectl https://dl.k8s.io/release/${KUBE_VERSION}/bin/linux/amd64/kubectl \
-    && chmod +x /usr/local/bin/kubectl
-#ADD https://storage.googleapis.com/kubernetes-release/release/${KUBE_VERSION}/bin/linux/amd64/kubectl /usr/local/bin/kubectl
-RUN chmod +x /usr/local/bin/kubectl
-RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
-COPY db-backup.sh /usr/bin/
-ENTRYPOINT [ "/usr/bin/db-backup.sh"]
+FROM golang:1.26.2-alpine AS builder
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /db-backup ./cmd/db-backup
+
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=builder /db-backup /db-backup
+ENTRYPOINT ["/db-backup"]

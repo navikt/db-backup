@@ -1,0 +1,27 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - gosec
+    - bodyclose
+    - nilerr
+    - errorlint
+    - copyloopvar
+
+formatters:
+  enable:
+    - gofumpt
+
+linters-settings:
+  gosec:
+    excludes:
+      - G104  # unhandled errors in deferred Close() calls
+
+issues:
+  exclude-dirs:
+    - vendor
+
