@@ -21,6 +21,9 @@ jobs:
       - name: Run golangci-lint
         run: mise run lint
 
+      - name: Run govulncheck
+        run: mise run vulncheck
+
   build_and_push:
     name: Build and sign image to GAR
     needs: test_and_lint

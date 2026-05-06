@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
@@ -129,7 +129,6 @@ func (c *Client) GetSQLInstance(ctx context.Context, namespace, name string) (*S
 		ServiceAccountEmailAddress: sa,
 	}, nil
 }
-
 
 func parseSQLDatabase(obj unstructured.Unstructured) (SQLDatabase, error) {
 	instanceRef, _, err := unstructured.NestedString(obj.Object, "spec", "instanceRef", "name")

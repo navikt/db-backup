@@ -1,6 +1,7 @@
 [tools]
 go = "1.26.2"
 "golangci-lint" = "2.12.2"
+"go:golang.org/x/vuln/cmd/govulncheck" = "latest"
 
 [tasks.build]
 description = "Build the binary"
@@ -14,9 +15,13 @@ run = "go test -race -count=1 ./..."
 description = "Run golangci-lint"
 run = "golangci-lint run ./..."
 
+[tasks.vulncheck]
+description = "Check for known vulnerabilities in dependencies"
+run = "govulncheck ./..."
+
 [tasks.check]
-description = "Run all checks (lint + test + build)"
-depends = ["lint", "test", "build"]
+description = "Run all checks (lint + test + vulncheck + build)"
+depends = ["lint", "test", "vulncheck", "build"]
 
 [tasks.docker-build]
 description = "Build Docker image"

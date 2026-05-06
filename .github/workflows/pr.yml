@@ -19,5 +19,8 @@ jobs:
       - name: Run golangci-lint
         run: mise run lint
 
+      - name: Run govulncheck
+        run: mise run vulncheck
+
       - name: Verify build
         run: mise run build
