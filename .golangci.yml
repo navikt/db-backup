@@ -7,18 +7,19 @@ linters:
     - staticcheck
     - unused
     - gosec
-    - gofumpt
     - bodyclose
     - nilerr
     - errorlint
     - copyloopvar
 
+formatters:
+  enable:
+    - gofumpt
+
 linters-settings:
   gosec:
     excludes:
       - G104  # unhandled errors in deferred Close() calls
-  gofumpt:
-    extra-rules: true
 
 issues:
   exclude-dirs:
