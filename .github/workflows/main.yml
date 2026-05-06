@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
 
-      - uses: jdx/mise-action@v4
+      - uses: jdx/mise-action@5d1b0f3c9d8a8d7e6c4b2a190f8e7d6c5b4a3210 # ratchet:jdx/mise-action@v4
 
       - name: Run tests
         run: mise run test
