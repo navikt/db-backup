@@ -23,7 +23,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 
 	sqlAdminService, err := sqladmin.NewService(ctx)
 	if err != nil {
-		storageClient.Close()
+		_ = storageClient.Close()
 		return nil, fmt.Errorf("creating sqladmin client: %w", err)
 	}
 
@@ -34,8 +34,9 @@ func NewClient(ctx context.Context) (*Client, error) {
 }
 
 // Close cleans up client resources.
-func (c *Client) Close() {
+func (c *Client) Close() error {
 	if c.Storage != nil {
-		c.Storage.Close()
+		return c.Storage.Close()
 	}
+	return nil
 }

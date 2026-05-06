@@ -13,8 +13,8 @@ import (
 // mockK8s implements K8sClient for testing.
 type mockK8s struct {
 	databases  []k8s.SQLDatabase
-	projectIDs map[string]string            // namespace -> projectID
-	instances  map[string]*k8s.SQLInstance   // "namespace/name" -> instance
+	projectIDs map[string]string           // namespace -> projectID
+	instances  map[string]*k8s.SQLInstance // "namespace/name" -> instance
 }
 
 func (m *mockK8s) ListSQLDatabases(_ context.Context) ([]k8s.SQLDatabase, error) {
@@ -44,10 +44,10 @@ func (m *mockK8s) GetSQLInstance(_ context.Context, namespace, name string) (*k8
 
 // mockGCP implements GCPClient for testing.
 type mockGCP struct {
-	existingObjects map[string]bool   // "bucket/object" -> exists
-	grantCalls      []string          // service account emails granted
-	exportCalls     []exportCall      // exports started
-	waitCalls       []string          // operation names waited on
+	existingObjects map[string]bool // "bucket/object" -> exists
+	grantCalls      []string        // service account emails granted
+	exportCalls     []exportCall    // exports started
+	waitCalls       []string        // operation names waited on
 	exportErr       error
 	waitErr         error
 }

@@ -41,7 +41,11 @@ func main() {
 		slog.Error("failed to create GCP client", "error", err)
 		os.Exit(1)
 	}
-	defer gcpClient.Close()
+	defer func() {
+		if err := gcpClient.Close(); err != nil {
+			slog.Error("failed to close GCP client", "error", err)
+		}
+	}()
 
 	runner := backup.NewRunner(k8sClient, gcpClient, bucketName)
 	if err := runner.Run(ctx); err != nil {
